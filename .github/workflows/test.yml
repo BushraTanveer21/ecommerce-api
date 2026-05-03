@@ -1,23 +1,17 @@
 name: Run Integration Tests
-
 on:
   push:
-    branches: ["**"]       # every push, every branch
-  pull_request:
     branches: ["**"]
-
 jobs:
   test:
     name: Integration Tests (Node + PostgreSQL)
     runs-on: ubuntu-latest
-
-    # ── Spin up a real PostgreSQL service container ──────────────────────────
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB:       ecommerce
-          POSTGRES_USER:     postgres
+          POSTGRES_DB: ecommerce
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
@@ -26,41 +20,27 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
-    # ── Environment variables available to all steps ─────────────────────────
     env:
-      DB_HOST:     localhost
-      DB_PORT:     5432
-      DB_NAME:     ecommerce
-      DB_USER:     postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: ecommerce
+      DB_USER: postgres
       DB_PASSWORD: postgres
-      NODE_ENV:    test
-
+      NODE_ENV: test
     steps:
-      # 1. Check out source code
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      # 2. Set up Node.js
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-
-      # 3. Install dependencies
       - name: Install dependencies
-        run: npm install
-
-      # 4. Wait for PostgreSQL to be ready (extra safety net)
+        run: npm ci
       - name: Wait for PostgreSQL
         run: |
           until pg_isready -h localhost -p 5432 -U postgres; do
-            echo "Waiting for PostgreSQL…"
+            echo "Waiting for PostgreSQL..."
             sleep 2
           done
-          echo "PostgreSQL is ready ✔"
-
-      # 5. Run the integration test suite
       - name: Run tests
-        run: npx jest --forceExit --detectOpenHandles --runInBand
+        run: npm test
